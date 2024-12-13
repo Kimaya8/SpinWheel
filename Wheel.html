@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Secret Santa Spin Wheel</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f7f8fa;
+    }
+    #spinner {
+      margin: 20px auto;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      border: 5px solid #ccc;
+      position: relative;
+      transition: transform 3s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+    .slice {
+      position: absolute;
+      width: 50%;
+      height: 50%;
+      background: #f0f0f0;
+      transform-origin: 100% 100%;
+      clip-path: polygon(100% 0, 100% 100%, 0 100%);
+    }
+    #spin-button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 18px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    #spin-button:hover {
+      background-color: #218838;
+    }
+    .popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 20px;
+      border-radius: 5px;
+      text-align: center;
+      z-index: 1000;
+    }
+    .popup h2 {
+      margin: 0 0 10px;
+    }
+    .popper {
+      font-size: 50px;
+      color: #ffcc00;
+      animation: popper-animation 1s infinite;
+    }
+    @keyframes popper-animation {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.2);
+      }
+    }
+    /* Login Page Styling */
+    #login-page {
+      display: none;
+      text-align: center;
+      margin-top: 20px;
+    }
+    #login-page input {
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    #login-page button {
+      padding: 10px 20px;
+      font-size: 18px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+    #login-page button:hover {
+      background-color: #0056b3;
+    }
+    #results-table {
+      margin-top: 20px;
+      display: none;
+      width: 80%;
+      margin-left: auto;
+      margin-right: auto;
+      border-collapse: collapse;
+    }
+    #results-table th, #results-table td {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+    #results-table th {
+      background-color: #f2f2f2;
+    }
+    #click-button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 18px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+    #click-button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h1>Secret Santa Spin Wheel</h1>
+  <p>Enter your name:</p>
+  <input type="text" id="spinner-name" placeholder="Your Name" />
+  <div id="spinner"></div>
+  <button id="spin-button">Spin the Wheel</button>
+
+  <div class="popup" id="popup">
+    <h2>Your giftee is <span id="result-name"></span>!</h2>
+    <div class="popper">🎉</div>
+    <div class="popper">🎉</div>
+    <div class="popper">🎉</div>
+  </div>
+
+  <!-- Hidden Table to Show Results -->
+  <div id="results-container">
+    <button id="click-button">Click to See Results</button>
+    <table id="results-table">
+      <thead>
+        <tr>
+          <th>Spinner</th>
+          <th>Giftee</th>
+        </tr>
+      </thead>
+      <tbody id="results-body"></tbody>
+    </table>
+  </div>
+
+  <!-- Login Page -->
+  <div id="login-page">
+    <h2>Login Page</h2>
+    <input type="text" id="username" placeholder="Username" />
+    <input type="password" id="password" placeholder="Password" />
+    <button id="login-button">Login</button>
+  </div>
+
+  <script>
+  let names = ["Alice", "Bob", "Charlie", "David", "Eve"];
+  let spunNames = new Set();
+  let spinResults = [];
+  let isLoggedIn = false;
+
+  const spinner = document.getElementById("spinner");
+  const spinButton = document.getElementById("spin-button");
+  const spinnerNameInput = document.getElementById("spinner-name");
+  const popup = document.getElementById("popup");
+  const resultName = document.getElementById("result-name");
+  const resultsBody = document.getElementById("results-body");
+  const resultsTable = document.getElementById("results-table");
+  const clickButton = document.getElementById("click-button");
+  const loginPage = document.getElementById("login-page");
+  const loginButton = document.getElementById("login-button");
+
+  const correctUsername = "authorizer";
+  const correctPassword = "password123"; // Change to a secure password in production
+
+  // Generate wheel slices
+  names.forEach((name, index) => {
+    const slice = document.createElement("div");
+    slice.classList.add("slice");
+    slice.style.transform = `rotate(${(360 / names.length) * index}deg)`;
+    slice.style.background = index % 2 === 0 ? "#ffcccc" : "#ccffcc";
+    slice.innerHTML = `<div style="transform: rotate(-${(360 / names.length) * index}deg);">${name}</div>`;
+    spinner.appendChild(slice);
+  });
+
+  function updateResultsDisplay() {
+    resultsBody.innerHTML = ""; 
+    spinResults.forEach(result => {
+      const row = document.createElement("tr");
+      row.innerHTML = `<td>${result.spinner}</td><td>${result.giftee}</td>`;
+      resultsBody.appendChild(row);
+    });
+  }
+
+  function spinWheel() {
+    const spinnerName = spinnerNameInput.value.trim();
+    if (!spinnerName) {
+      alert("Please enter your name.");
+      return;
+    }
+
+    if (!names.includes(spinnerName)) {
+      alert("Your name is not in the list. Please enter a valid name.");
+      return;
+    }
+
+    if (spunNames.has(spinnerName)) {
+      alert("You have already spun the wheel. Only one spin per person.");
+      return;
+    }
+
+    let selectedName;
+    do {
+      const randomDegree = Math.floor(Math.random() * 360);
+      spinner.style.transform = `rotate(${randomDegree + 1440}deg)`;
+      selectedName = names[Math.floor(randomDegree / (360 / names.length))];
+    } while (selectedName === spinnerName);
+
+    setTimeout(() => {
+      popup.style.display = "block";
+      resultName.textContent = selectedName;
+      spunNames.add(spinnerName);
+      names.splice(names.indexOf(selectedName), 1);
+      spinResults.push({ spinner: spinnerName, giftee: selectedName });
+      updateResultsDisplay();
+
+      // Save data to Google Apps Script
+      fetch("https://script.google.com/macros/s/AKfycbz7Vw_y14gWfb3xFuE3MN0PSFTRaK8o87mO8F3iETtfnzsQuZ6mQjAbX3u57NvdJy7hEA/exec", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ spinner: spinnerName, selected: selectedName })
+      }).then(response => response.json())
+        .then(data => {
+          console.log("Data saved successfully:", data);
+        }).catch(error => {
+          console.error("Error saving data:", error);
+        });
+    }, 3000);
+  }
+
+  function showLoginPage() {
+    loginPage.style.display = "block";
+  }
+
+  function handleLogin() {
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    if (username === correctUsername && password === correctPassword) {
+      isLoggedIn = true;
+      alert("Login successful");
+      loginPage.style.display = "none";
+      resultsTable.style.display = "block";
+    } else {
+      alert("Invalid login credentials");
+    }
+  }
+
+  spinButton.addEventListener("click", spinWheel);
+  clickButton.addEventListener("click", showLoginPage);
+  loginButton.addEventListener("click", handleLogin);
+</script>
+</body>
+</html>
