@@ -159,6 +159,7 @@
 
   <script>
   let names = ["Alice", "Bob", "Charlie", "David", "Eve"];
+  let gifteeNames = [...names]; // Duplicate list for giftees
   let spunNames = new Set();
   let spinResults = [];
   let isLoggedIn = false;
@@ -217,14 +218,17 @@
     do {
       const randomDegree = Math.floor(Math.random() * 360);
       spinner.style.transform = `rotate(${randomDegree + 1440}deg)`;
-      selectedName = names[Math.floor(randomDegree / (360 / names.length))];
+      selectedName = gifteeNames[Math.floor(randomDegree / (360 / gifteeNames.length))];
     } while (selectedName === spinnerName);
 
     setTimeout(() => {
       popup.style.display = "block";
       resultName.textContent = selectedName;
       spunNames.add(spinnerName);
-      names.splice(names.indexOf(selectedName), 1);
+      // Remove spinner's name from the spinner list
+      names = names.filter(name => name !== spinnerName);
+      // Remove giftee's name from the giftee list
+      gifteeNames = gifteeNames.filter(name => name !== selectedName);
       spinResults.push({ spinner: spinnerName, giftee: selectedName });
       updateResultsDisplay();
 
@@ -239,6 +243,11 @@
         }).catch(error => {
           console.error("Error saving data:", error);
         });
+
+      // Hide the popup after 5 seconds
+      setTimeout(() => {
+        popup.style.display = "none";
+      }, 5000);
     }, 3000);
   }
 
